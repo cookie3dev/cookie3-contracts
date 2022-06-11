@@ -8,11 +8,11 @@ contract ERC20Mock is ERC20 {
     uint8 private _decimals;
 
     constructor(
-        string memory name,
-        string memory symbol,
+        string memory name_,
+        string memory symbol_,
         uint8 decimals_,
         uint256 supply
-    ) ERC20(name, symbol) {
+    ) ERC20(name_, symbol_) {
         _decimals = decimals_;
         _mint(msg.sender, supply);
     }

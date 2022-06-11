@@ -315,8 +315,8 @@ describe("Anti-bot", () => {
 
   describe("whitelistAccount", () => {
     it("should revert if address zero is passed as account argument", async function () {
-      await expect(token.whitelistAccount(ZERO_ADDRESS, true)).to.be.revertedWith("Zero address");
-      await expect(token.whitelistAccount(ZERO_ADDRESS, false)).to.be.revertedWith("Zero address");
+      await expect(token.whitelistAccount(ZERO_ADDRESS, true)).to.be.revertedWith("zero address");
+      await expect(token.whitelistAccount(ZERO_ADDRESS, false)).to.be.revertedWith("zero address");
     });
 
     it("should correctly add and remove user from whitelist and correctly emit event", async function () {
@@ -337,8 +337,8 @@ describe("Anti-bot", () => {
     });
 
     it("should revert if address zero is passed as account argument", async function () {
-      await expect(token.unthrottleAccount(ZERO_ADDRESS, true)).to.be.revertedWith("Zero address");
-      await expect(token.unthrottleAccount(ZERO_ADDRESS, false)).to.be.revertedWith("Zero address");
+      await expect(token.unthrottleAccount(ZERO_ADDRESS, true)).to.be.revertedWith("zero address");
+      await expect(token.unthrottleAccount(ZERO_ADDRESS, false)).to.be.revertedWith("zero address");
     });
 
     it("should set unthrottled and emit event correctly", async function () {

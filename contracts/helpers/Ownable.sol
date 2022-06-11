@@ -20,34 +20,37 @@ contract Ownable is OwnableData {
     /**
      * @dev Transfers ownership to `newOwner`. Either directly or claimable by the new pending owner.
      *      Can only be invoked by the current `owner`.
-     * @param _newOwner Address of the new owner.
-     * @param _direct True if `_newOwner` should be set immediately. False if `_newOwner` needs to use `claimOwnership`.
-     * @param _renounce Allows the `_newOwner` to be `address(0)` if `_direct` and `_renounce` is True. Has no effect otherwise
+     * @param newOwner Address of the new owner.
+     * @param direct True if `_newOwner` should be set immediately. False if `_newOwner` needs to use `claimOwnership`.
      */
-    function transferOwnership(
-        address _newOwner,
-        bool _direct,
-        bool _renounce
-    ) external onlyOwner {
-        if (_direct) {
-            require(_newOwner != address(0) || _renounce, "zero address");
+    function transferOwnership(address newOwner, bool direct) external onlyOwner {
+        require(newOwner != address(0), "zero address");
 
-            _setOwner(_newOwner);
-            pendingOwner = address(0);
+        if (direct) {
+            _setOwner(newOwner);
         } else {
-            pendingOwner = _newOwner;
+            pendingOwner = newOwner;
         }
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() external onlyOwner {
+        _setOwner(address(0));
     }
 
     /**
      * @dev Needs to be called by `pendingOwner` to claim ownership.
      */
     function claimOwnership() external {
-        address _pendingOwner = pendingOwner;
-        require(msg.sender == _pendingOwner, "caller != pending owner");
+        require(msg.sender == pendingOwner, "caller != pending owner");
 
-        _setOwner(_pendingOwner);
-        pendingOwner = address(0);
+        _setOwner(pendingOwner);
     }
 
     /**
@@ -58,9 +61,14 @@ contract Ownable is OwnableData {
         _;
     }
 
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Set pendingOwner to address(0)
+     * Internal function without access restriction.
+     */
     function _setOwner(address newOwner) internal {
-        address oldOwner = owner;
+        emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
+        pendingOwner = address(0);
     }
 }

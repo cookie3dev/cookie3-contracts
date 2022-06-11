@@ -68,10 +68,15 @@ contract Vesting is Ownable, Lockable {
     ) external onlyOwner whenNotLocked {
         uint256 len = _users.length; //cheaper to use one variable
         require((len == _startTokens.length) && (len == _totalTokens.length), "data size mismatch");
-        uint256 i;
-        for (i; i < len; i++) {
+
+        uint256 vested = 0;
+
+        for (uint256 i = 0; i < len; i++) {
             _addHolder(_users[i], _startTokens[i], _totalTokens[i], _startDate, _cliff, _duration);
+            vested += _totalTokens[i];
         }
+
+        totalVested += vested;
     }
 
     /**
@@ -92,14 +97,16 @@ contract Vesting is Ownable, Lockable {
         uint256 _duration
     ) internal {
         require(_user != address(0), "user address cannot be 0");
-        Vest memory v;
-        v.startTokens = _startTokens;
-        v.totalTokens = _totalTokens;
-        v.dateStart = _startDate;
-        v.cliffLength = _cliff;
-        v.dateEnd = _startDate + _cliff + _duration;
 
-        totalVested += _totalTokens;
+        Vest memory v = Vest({
+            dateStart: _startDate,
+            dateEnd: (_startDate + _cliff + _duration),
+            totalTokens: _totalTokens,
+            startTokens: _startTokens,
+            claimedTokens: 0,
+            cliffLength: _cliff
+        });
+
         vestings.push(v);
         user2vesting[_user].push(vestings.length); // we are skipping index "0" for reasons
         emit Vested(_user, v.totalTokens, v.dateEnd);
@@ -130,18 +137,19 @@ contract Vesting is Ownable, Lockable {
         require(_target != address(0), "claim, then burn");
         uint256 len = user2vesting[_user].length;
         require(len > 0, "no vestings for user");
-        uint256 cl;
-        uint256 i;
-        for (i; i < len; i++) {
+
+        for (uint256 i = 0; i < len; i++) {
             Vest storage v = vestings[user2vesting[_user][i] - 1];
-            cl = _claimable(v);
+            uint256 cl = _claimable(v);
             v.claimedTokens += cl;
             amt += cl;
         }
+
         if (amt > 0) {
             totalClaimed += amt;
-            _transfer(_target, amt);
             emit Claimed(_user, amt);
+
+            _transfer(_target, amt);
         } else revert("nothing to claim");
     }
 
@@ -203,10 +211,9 @@ contract Vesting is Ownable, Lockable {
      * @param _user address of holder
      * @return amount number of tokens
      */
-    function getAllClaimable(address _user) public view returns (uint256 amount) {
+    function getAllClaimable(address _user) external view returns (uint256 amount) {
         uint256 len = user2vesting[_user].length;
-        uint256 i;
-        for (i; i < len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             amount += _claimable(vestings[user2vesting[_user][i] - 1]);
         }
     }
@@ -230,9 +237,7 @@ contract Vesting is Ownable, Lockable {
         uint256 len = user2vesting[_user].length;
         VestReturn[] memory v = new VestReturn[](len);
 
-        // copy vestings
-        uint256 i;
-        for (i; i < len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             v[i].dateStart = vestings[user2vesting[_user][i] - 1].dateStart;
             v[i].dateEnd = vestings[user2vesting[_user][i] - 1].dateEnd;
             v[i].totalTokens = vestings[user2vesting[_user][i] - 1].totalTokens;
@@ -257,15 +262,14 @@ contract Vesting is Ownable, Lockable {
      * @return Vest object
      */
     function getVestingByIndex(uint256 _id) external view returns (VestReturn memory) {
-        VestReturn memory v;
-
-        v.dateStart = vestings[_id].dateStart;
-        v.dateEnd = vestings[_id].dateEnd;
-        v.totalTokens = vestings[_id].totalTokens;
-        v.startTokens = vestings[_id].startTokens;
-        v.claimedTokens = vestings[_id].claimedTokens;
-
-        return v;
+        return
+            VestReturn({
+                dateStart: vestings[_id].dateStart,
+                dateEnd: vestings[_id].dateEnd,
+                totalTokens: vestings[_id].totalTokens,
+                startTokens: vestings[_id].startTokens,
+                claimedTokens: vestings[_id].claimedTokens
+            });
     }
 
     /**
@@ -280,8 +284,7 @@ contract Vesting is Ownable, Lockable {
         require(_end < len, "range error");
         VestReturn[] memory v = new VestReturn[](cnt);
 
-        uint256 i;
-        for (i; i < cnt; i++) {
+        for (uint256 i = 0; i < cnt; i++) {
             v[i].dateStart = vestings[_start + i].dateStart;
             v[i].dateEnd = vestings[_start + i].dateEnd;
             v[i].totalTokens = vestings[_start + i].totalTokens;
@@ -295,7 +298,7 @@ contract Vesting is Ownable, Lockable {
     /**
      * @dev Recover ETH from contract to owner address.
      */
-    function recoverETH() external {
+    function recoverETH() external onlyOwner {
         payable(owner).transfer(address(this).balance);
     }
 

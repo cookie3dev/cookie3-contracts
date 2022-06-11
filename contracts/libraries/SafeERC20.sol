@@ -40,16 +40,4 @@ library SafeERC20 {
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(0x23b872dd, from, to, amount));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "SafeERC20: TransferFrom failed");
     }
-
-    function safeTransferFromDeluxe(
-        IERC20 token,
-        address from,
-        address to,
-        uint256 amount
-    ) internal returns (uint256) {
-        uint256 preBalance = token.balanceOf(to);
-        safeTransferFrom(token, from, to, amount);
-        uint256 postBalance = token.balanceOf(to);
-        return postBalance - preBalance;
-    }
 }

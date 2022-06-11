@@ -56,6 +56,7 @@ describe("Vesting", () => {
       await expect(vesting.connect(alice).massAddHolders([], [], [], 1, 2, 3)).to.be.revertedWith("caller is not the owner");
       await expect(_vesting.connect(alice).init(token.address)).to.be.revertedWith("caller is not the owner");
       await expect(_vesting.connect(alice).recoverErc20(token.address)).to.be.revertedWith("caller is not the owner");
+      await expect(_vesting.connect(alice).recoverETH()).to.be.revertedWith("caller is not the owner");
     });
   });
 
@@ -500,7 +501,6 @@ describe("Vesting", () => {
 
   describe("recoverETH", () => {
     it("should recover ETH correctly", async function () {
-      await expect(vesting.connect(alice).recoverETH()).to.not.be.reverted;
       await expect(vesting.recoverETH()).to.not.be.reverted;
     });
   });
